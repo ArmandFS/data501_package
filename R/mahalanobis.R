@@ -1,20 +1,8 @@
 #' Squared Mahalanobis distance via a Cholesky factor
 #'
-#' Computes the squared Mahalanobis distance
-#' \eqn{D^2(x) = (x - \mu)^\top \Sigma^{-1} (x - \mu)} for each row of `x`,
-#' given the centre \eqn{\mu} and the upper-triangular Cholesky factor
-#' \eqn{R} of \eqn{\Sigma}, where \eqn{\Sigma = R^\top R} (Mahalanobis, 1936).
-#'
-#' @section Why the Cholesky factor:
-#' The textbook formulation inverts the covariance matrix. That is both slower
-#' and less numerically stable than solving the triangular system directly:
-#' writing \eqn{z = R^{-\top}(x - \mu)} gives \eqn{D^2 = z^\top z}, which needs
-#' only a back-substitution. Factorising once costs \eqn{O(p^3)} and is then
-#' reused across every document at \eqn{O(p^2)} each, and the condition number
-#' of the triangular solve is the square root of that of the explicit inverse.
-#' Passing the factor in, rather than the covariance, means a
-#' [stylo_profile][build_profile] factorises its covariance once at
-#' construction time and never again.
+#' Computes the squared Mahalanobis distance for each row of `x`. Takes the
+#' Cholesky factor rather than the covariance so that a reference profile can
+#' factorise once and reuse it for every call.
 #'
 #' @param x Numeric matrix with one row per observation and one column per
 #'   feature, or a numeric vector treated as a single observation.
@@ -25,17 +13,13 @@
 #' @return Numeric vector of squared distances, one per row of `x`, named with
 #'   the rownames of `x` when it has any.
 #'
-#' @references
-#' Mahalanobis, P. C. (1936). On the generalised distance in statistics.
-#' \emph{Proceedings of the National Institute of Sciences of India}, 2(1), 49--55.
-#'
 #' @examples
 #' set.seed(1)
 #' m <- matrix(rnorm(200), ncol = 2)
 #' R <- chol(cov(m))
 #' d <- mahalanobis_sq(m, colMeans(m), R)
 #'
-#' # Agrees with the base R implementation.
+#' # same answer as base R
 #' all.equal(d, mahalanobis(m, colMeans(m), cov(m)), check.attributes = FALSE)
 #'
 #' @export
@@ -77,15 +61,14 @@ mahalanobis_sq <- function(x, center, chol_cov) {
          call. = FALSE)
   }
 
-  # Centre each observation, then solve R^T z = (x - mu) by forward
-  # substitution. Columns of `centred` are observations, so one triangular
-  # solve handles the whole matrix at once.
+  #solve R^T z = (x - mu) instead of inverting. Observations are columns
+  #here so one call handles the whole matrix.
   centred <- t(x) - center
   z <- backsolve(chol_cov, centred, transpose = TRUE)
 
   d2 <- colSums(z * z)
 
-  # Round-off can push a distance of exactly zero to a tiny negative number.
+  #rounding can push an exact zero slightly negative
   d2[d2 < 0] <- 0
 
   names(d2) <- rownames(x)

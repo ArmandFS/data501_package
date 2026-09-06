@@ -1,29 +1,23 @@
-# Tests for count_syllables_cpp().
-#
-# The compiled implementation gets the heavier test treatment because a bug in
-# C++ is quieter and more dangerous than a bug in R: an off-by-one index reads
-# memory the vector does not own instead of raising an error. The pure-R
-# count_syllables_r() exists partly to serve as an independent oracle here --
-# the two were written from the same spec in different languages, so any
-# disagreement means at least one of them is wrong.
+#the C++ version gets tested harder than its size suggests: an off-by-one in
+#C++ reads memory it doesn't own instead of erroring like R would.
 
-# --- Hand-computed anchors --------------------------------------------------
+# --- counts worked out by hand ---
 #
-# Differential testing alone would pass if BOTH implementations were wrong in
-# the same way, so a handful of values are pinned to counts worked out by hand.
+#comparing the two implementations would still pass if both were wrong the
+#same way, so pin some values independently.
 
 test_that("matches syllable counts worked out by hand", {
-  expect_equal(count_syllables_cpp("cat"), 1L)          # one vowel group
-  expect_equal(count_syllables_cpp("beautiful"), 3L)    # eau / i / u
-  expect_equal(count_syllables_cpp("make"), 1L)         # silent trailing e
-  expect_equal(count_syllables_cpp("table"), 2L)        # syllabic -le, not silent
-  expect_equal(count_syllables_cpp("queue"), 1L)        # one long vowel run
-  expect_equal(count_syllables_cpp("rhythm"), 1L)       # y counts as a vowel
+  expect_equal(count_syllables_cpp("cat"), 1L)
+  expect_equal(count_syllables_cpp("beautiful"), 3L)    #eau / i / u
+  expect_equal(count_syllables_cpp("make"), 1L)         #silent trailing e
+  expect_equal(count_syllables_cpp("table"), 2L)        #syllabic -le
+  expect_equal(count_syllables_cpp("queue"), 1L)        #one long vowel run
+  expect_equal(count_syllables_cpp("rhythm"), 1L)       #y counts as a vowel
   expect_equal(count_syllables_cpp("happy"), 2L)
-  expect_equal(count_syllables_cpp("the"), 1L)          # floor of 1, not 0
+  expect_equal(count_syllables_cpp("the"), 1L)          #floor of 1, not 0
 })
 
-# --- Differential testing against the R oracle ------------------------------
+# --- vs the R version ---
 
 test_that("agrees with the R implementation on a spread of words", {
   words <- c(
@@ -37,7 +31,7 @@ test_that("agrees with the R implementation on a spread of words", {
 })
 
 test_that("agrees with the R implementation on random letter strings", {
-  # Random strings explore combinations no hand-written list would think of.
+  #random strings hit combinations a hand-written list wouldn't
   set.seed(7)
   words <- vapply(seq_len(500), function(i) {
     paste(sample(letters, sample(1:12, 1), replace = TRUE), collapse = "")
@@ -51,7 +45,7 @@ test_that("agrees with the R implementation on messy input", {
   expect_equal(count_syllables_cpp(messy), count_syllables_r(messy))
 })
 
-# --- Edge cases -------------------------------------------------------------
+# --- edge cases ---
 
 test_that("returns 0 when there are no letters to count", {
   expect_equal(count_syllables_cpp(""), 0L)
@@ -70,12 +64,12 @@ test_that("is case insensitive", {
 })
 
 test_that("handles very short and very long words", {
-  # The silent-e branch reads w[len - 3], so words of length 1, 2 and 3 are the
-  # inputs most likely to index out of bounds.
+  #the silent-e branch reads w[len - 3], so 1-3 letter words are where it
+  #would go out of bounds
   short <- c("a", "I", "an", "be", "the", "ate", "eye")
   expect_equal(count_syllables_cpp(short), count_syllables_r(short))
 
-  long <- paste(rep("ba", 500), collapse = "")  # 1000 characters
+  long <- paste(rep("ba", 500), collapse = "")  #1000 characters
   expect_equal(count_syllables_cpp(long), 500L)
 })
 
@@ -83,7 +77,7 @@ test_that("handles an empty input vector", {
   expect_equal(count_syllables_cpp(character(0)), integer(0))
 })
 
-# --- Invariants that must hold for every input ------------------------------
+# --- things that should hold for any input ---
 
 test_that("returns one count per input element", {
   words <- c("one", "two", "three", "four")
@@ -103,7 +97,7 @@ test_that("returns an integer vector, not a double", {
   expect_type(count_syllables_cpp(c("cat", "table")), "integer")
 })
 
-# --- The R reference implementation validates its own input -----------------
+# --- the R version checks its own input ---
 
 test_that("count_syllables_r() rejects non-character input", {
   expect_error(count_syllables_r(1:3), "must be a character vector")

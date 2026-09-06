@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{count_syllables_cpp}
 \alias{count_syllables_cpp}
-\title{Count syllables in words (compiled implementation)}
+\title{Count syllables in words (C++ version)}
 \usage{
 count_syllables_cpp(words)
 }
@@ -10,26 +10,18 @@ count_syllables_cpp(words)
 \item{words}{Character vector of words.}
 }
 \value{
-Integer vector of syllable counts, the same length as `words`.
-  Words with no alphabetic characters give 0; any other word gives at
-  least 1. `NA` input gives `NA_integer_`.
+Integer vector of syllable counts, same length as `words`. Words
+  with no letters give 0, anything else gives at least 1, `NA` gives `NA`.
 }
 \description{
-Compiled equivalent of [count_syllables_r()], using the same vowel-group
-heuristic with the same silent-"e" and syllabic-"-le" rules. The two
-functions must agree on every input; the unit tests enforce this by
-differential testing.
-}
-\details{
-Syllable counting is a character-by-character scan over every word of every
-document, which is the shape of problem where R's vectorisation gives
-nothing and the interpreter overhead dominates. Moving the inner loop to
-C++ removes that overhead; see the package vignette for a benchmark.
+Same algorithm as [count_syllables_r()], moved to C++ because it is a
+character-by-character scan over every word of every document, which is
+where R's interpreter overhead hurts most. Around 14x faster.
 }
 \examples{
 count_syllables_cpp(c("cat", "table", "beautiful"))
 
 }
 \seealso{
-[count_syllables_r()] for the reference R implementation.
+[count_syllables_r()]
 }

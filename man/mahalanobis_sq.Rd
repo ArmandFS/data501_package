@@ -20,35 +20,17 @@ Numeric vector of squared distances, one per row of `x`, named with
   the rownames of `x` when it has any.
 }
 \description{
-Computes the squared Mahalanobis distance
-\eqn{D^2(x) = (x - \mu)^\top \Sigma^{-1} (x - \mu)} for each row of `x`,
-given the centre \eqn{\mu} and the upper-triangular Cholesky factor
-\eqn{R} of \eqn{\Sigma}, where \eqn{\Sigma = R^\top R} (Mahalanobis, 1936).
+Computes the squared Mahalanobis distance for each row of `x`. Takes the
+Cholesky factor rather than the covariance so that a reference profile can
+factorise once and reuse it for every call.
 }
-\section{Why the Cholesky factor}{
-
-The textbook formulation inverts the covariance matrix. That is both slower
-and less numerically stable than solving the triangular system directly:
-writing \eqn{z = R^{-\top}(x - \mu)} gives \eqn{D^2 = z^\top z}, which needs
-only a back-substitution. Factorising once costs \eqn{O(p^3)} and is then
-reused across every document at \eqn{O(p^2)} each, and the condition number
-of the triangular solve is the square root of that of the explicit inverse.
-Passing the factor in, rather than the covariance, means a
-[stylo_profile][build_profile] factorises its covariance once at
-construction time and never again.
-}
-
 \examples{
 set.seed(1)
 m <- matrix(rnorm(200), ncol = 2)
 R <- chol(cov(m))
 d <- mahalanobis_sq(m, colMeans(m), R)
 
-# Agrees with the base R implementation.
+# same answer as base R
 all.equal(d, mahalanobis(m, colMeans(m), cov(m)), check.attributes = FALSE)
 
-}
-\references{
-Mahalanobis, P. C. (1936). On the generalised distance in statistics.
-\emph{Proceedings of the National Institute of Sciences of India}, 2(1), 49--55.
 }

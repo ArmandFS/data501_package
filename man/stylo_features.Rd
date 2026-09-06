@@ -11,30 +11,24 @@ stylo_features(text)
 }
 \value{
 Numeric matrix with one row per document and five named feature
-  columns. Rownames are carried over from `names(text)` when present.
+  columns. Row names are carried over from `names(text)` when present.
   A document with no word tokens yields a row of `NA`s.
 }
 \description{
-Computes the five interpretable features that make up a
-[stylo_profile][build_profile]. Each is a scale-free or length-normalised
-quantity, so documents of different lengths remain comparable.
+Computes five interpretable features per document. Each is a rate,
+proportion or ratio, so documents of different lengths stay comparable.
 }
 \section{Features}{
 
 \describe{
-  \item{`mean_sentence_length`}{Mean number of word tokens per sentence.}
-  \item{`conj_rate`}{Coordinating and subordinating conjunctions per
-    sentence, a proxy for clause-level sentence complexity.}
-  \item{`cv_word_length`}{Coefficient of variation of word length in
-    characters: the standard deviation divided by the mean. Dividing by the
-    mean is what makes this comparable across writers who simply favour
-    longer words.}
-  \item{`prop_polysyllabic`}{Proportion of tokens with three or more
-    syllables, the SMOG readability proxy, computed with
-    [count_syllables_cpp()].}
-  \item{`vocab_sophistication`}{Proportion of tokens falling outside a
-    bundled band of common English words, following the frequency-band
-    approach of Froehling and Zubiaga (2021).}
+  \item{`mean_sentence_length`}{Word tokens per sentence.}
+  \item{`conj_rate`}{Conjunctions per sentence.}
+  \item{`cv_word_length`}{Coefficient of variation of word length, i.e.
+    the standard deviation over the mean. Dividing by the mean is what
+    stops this just measuring who uses longer words.}
+  \item{`prop_polysyllabic`}{Proportion of tokens with 3+ syllables.}
+  \item{`vocab_sophistication`}{Proportion of tokens outside a band of
+    common English words.}
 }
 }
 
@@ -44,9 +38,4 @@ stylo_features(c(
   "Consequently, the extraordinary ramifications remained incomprehensible."
 ))
 
-}
-\references{
-Froehling, L., & Zubiaga, A. (2021). Feature-based detection of automated
-language models: Tackling GPT-2, GPT-3 and Grover. \emph{PeerJ Computer
-Science}, 7, e443.
 }
