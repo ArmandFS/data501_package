@@ -14,3 +14,5 @@ src/*.dll
 *.pdf
 *.html
 docs/*_files/
+.DS_Store
+docs/
