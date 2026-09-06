@@ -1,0 +1,16 @@
+# R / RStudio
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+inst/doc
+
+# compiled objects
+src/*.o
+src/*.so
+src/*.dll
+
+# knitted output and course documents -- source only in the repo
+*.pdf
+*.html
+docs/*_files/
