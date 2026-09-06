@@ -1,0 +1,20 @@
+Package: styloprofile
+Type: Package
+Title: Stylometric Features and Mahalanobis Outlier Distances
+Version: 0.1.0
+Authors@R: person("Armand", "Surbakti", email = "actuallyarmand@gmail.com",
+                  role = c("aut", "cre"))
+Description: Extracts interpretable stylometric features from documents and
+    measures how far a document sits from a reference distribution using a
+    Cholesky-based squared Mahalanobis distance. Intended for studying whether
+    machine-generated text is a statistical outlier relative to human writing,
+    following the feature-based framing of Froehling and Zubiaga (2021)
+    <doi:10.7717/peerj-cs.443> and the distance of Mahalanobis (1936).
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends: R (>= 4.0)
+Imports: Rcpp, stats
+LinkingTo: Rcpp
+Suggests: testthat (>= 3.0.0), knitr, rmarkdown, microbenchmark
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.0
