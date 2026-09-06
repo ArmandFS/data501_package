@@ -2,7 +2,7 @@
 % Please edit documentation in R/syllables.R
 \name{count_syllables_r}
 \alias{count_syllables_r}
-\title{Count syllables in words (reference R implementation)}
+\title{Count syllables in words (R version)}
 \usage{
 count_syllables_r(words)
 }
@@ -10,28 +10,20 @@ count_syllables_r(words)
 \item{words}{Character vector of words.}
 }
 \value{
-Integer vector of syllable counts, the same length as `words`.
-  Words with no alphabetic characters give 0; any other word gives at
-  least 1. `NA` input gives `NA_integer_`.
+Integer vector of syllable counts, same length as `words`. Words
+  with no letters give 0, anything else gives at least 1, `NA` gives `NA`.
 }
 \description{
-Estimates the syllable count of each word by counting maximal groups of
-vowels, then subtracting a trailing silent "e". This is the standard
-heuristic behind readability indices such as SMOG and Flesch-Kincaid.
+Counts groups of vowels, then drops a trailing silent "e". Words ending in
+a consonant plus "le" keep the "e", so "table" is 2 but "make" is 1.
 }
 \details{
-The silent-"e" subtraction is skipped for words ending in a consonant
-followed by "le", where the "e" is syllabic: "table" is two syllables, but
-"make" is one.
-
-This pure-R version exists for two reasons: it documents the algorithm
-readably, and it acts as an independent oracle in the unit tests for the
-compiled [count_syllables_cpp()], which must agree with it exactly.
+Used as the reference for [count_syllables_cpp()] in the unit tests.
 }
 \examples{
 count_syllables_r(c("cat", "table", "beautiful"))
 
 }
 \seealso{
-[count_syllables_cpp()] for the compiled equivalent.
+[count_syllables_cpp()]
 }

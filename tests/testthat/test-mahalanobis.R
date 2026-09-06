@@ -1,11 +1,5 @@
-# Tests for mahalanobis_sq().
-#
-# This function is worth testing because its correct answer is knowable
-# independently of how it is implemented, in three separate ways: base R ships
-# a completely separate implementation to compare against, the distance obeys
-# mathematical identities that must hold for any correct version, and several
-# arguments have shapes that are simply invalid. None of that depends on a
-# corpus, so the tests are fast and deterministic.
+#tested against three things base R can't disagree with us about: its own
+#mahalanobis(), the identities the distance has to satisfy, and bad input.
 
 make_case <- function(n = 50L, p = 3L, seed = 42L) {
   set.seed(seed)
@@ -13,7 +7,7 @@ make_case <- function(n = 50L, p = 3L, seed = 42L) {
   list(x = x, center = colMeans(x), S = stats::cov(x))
 }
 
-# --- Oracle: agreement with a separate implementation -----------------------
+# --- vs base R ---
 
 test_that("agrees with stats::mahalanobis() across dimensions", {
   for (p in c(1L, 2L, 5L, 10L)) {
@@ -36,7 +30,7 @@ test_that("handles a single observation passed as a bare vector", {
   )
 })
 
-# --- Mathematical invariants ------------------------------------------------
+# --- identities that must hold ---
 
 test_that("reduces to squared Euclidean distance when the covariance is I", {
   cs <- make_case()
@@ -54,9 +48,8 @@ test_that("the distance at the centre is exactly zero", {
 })
 
 test_that("is invariant under an invertible affine map", {
-  # D^2 is unchanged by x -> Ax + b when Sigma -> A Sigma A'. This is the
-  # defining property of the Mahalanobis distance: it is the Euclidean distance
-  # after whitening, so it cannot depend on the units the features are in.
+  #D^2 shouldn't change under x -> Ax + b if Sigma -> A Sigma A', since the
+  #distance can't depend on what units the features are in
   cs <- make_case(p = 3L)
   A <- matrix(c(2, 0.5, 0, 0, 3, 1, 0.25, 0, 4), nrow = 3)
   b <- c(10, -5, 0.5)
@@ -76,7 +69,7 @@ test_that("is non-negative for any positive definite covariance", {
     set.seed(seed)
     p <- 4L
     B <- matrix(stats::rnorm(p * p), p)
-    S <- crossprod(B) + diag(p)  # positive definite by construction
+    S <- crossprod(B) + diag(p)  #positive definite by construction
     x <- matrix(stats::rnorm(30L * p), ncol = p)
     expect_true(all(mahalanobis_sq(x, rep(0, p), chol(S)) >= 0))
   }
@@ -90,7 +83,7 @@ test_that("preserves rownames and returns one distance per row", {
   expect_named(d, paste0("doc", 1:7))
 })
 
-# --- Invalid input ----------------------------------------------------------
+# --- bad input ---
 
 test_that("rejects a centre of the wrong length", {
   cs <- make_case(p = 3L)

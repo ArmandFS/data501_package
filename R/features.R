@@ -1,6 +1,4 @@
-# Closed-class conjunctions. Using a fixed word list rather than a
-# part-of-speech tagger keeps the package dependency-free: conjunctions are a
-# closed class, so enumerating them loses almost nothing.
+#conjunctions are a closed class, so listing them avoids needing a POS tagger
 .conjunctions <- c(
   # coordinating
   "and", "but", "or", "nor", "for", "yet", "so",
@@ -10,13 +8,8 @@
   "where", "whereas", "wherever", "whether", "while"
 )
 
-# The most frequent words of written English. `vocab_sophistication` is the
-# proportion of a document's tokens falling OUTSIDE this band, following the
-# frequency-band approach of Froehling & Zubiaga (2021).
-#
-# Held as an internal constant rather than an exported dataset: it is a fixed
-# part of the feature definition, not example data a user would inspect. Week 10
-# replaces it with a band derived from the reference corpus itself.
+#the most frequent words of written English. vocab_sophistication is the
+#proportion of a document's tokens falling outside this band.
 .common_words <- c(
   "a", "able", "about", "above", "across", "add", "after", "afternoon",
   "again", "against", "age", "ago", "air", "all", "allow", "almost", "along",
@@ -86,10 +79,8 @@
 
 #' Split text into sentences
 #'
-#' Splits on sentence-final punctuation followed by whitespace. Deliberately
-#' simple: abbreviations such as "Dr." will over-split, which adds noise to
-#' `mean_sentence_length` but does so consistently across the reference corpus
-#' and the scored documents, so the comparison stays fair.
+#' Splits on sentence-final punctuation. Abbreviations like "Dr." will
+#' over-split, but it does so consistently for every document.
 #'
 #' @param txt A single character string.
 #' @return Character vector of non-empty sentences.
@@ -113,37 +104,26 @@
 
 #' Extract stylometric features from documents
 #'
-#' Computes the five interpretable features that make up a
-#' [stylo_profile][build_profile]. Each is a scale-free or length-normalised
-#' quantity, so documents of different lengths remain comparable.
+#' Computes five interpretable features per document. Each is a rate,
+#' proportion or ratio, so documents of different lengths stay comparable.
 #'
 #' @section Features:
 #' \describe{
-#'   \item{`mean_sentence_length`}{Mean number of word tokens per sentence.}
-#'   \item{`conj_rate`}{Coordinating and subordinating conjunctions per
-#'     sentence, a proxy for clause-level sentence complexity.}
-#'   \item{`cv_word_length`}{Coefficient of variation of word length in
-#'     characters: the standard deviation divided by the mean. Dividing by the
-#'     mean is what makes this comparable across writers who simply favour
-#'     longer words.}
-#'   \item{`prop_polysyllabic`}{Proportion of tokens with three or more
-#'     syllables, the SMOG readability proxy, computed with
-#'     [count_syllables_cpp()].}
-#'   \item{`vocab_sophistication`}{Proportion of tokens falling outside a
-#'     bundled band of common English words, following the frequency-band
-#'     approach of Froehling and Zubiaga (2021).}
+#'   \item{`mean_sentence_length`}{Word tokens per sentence.}
+#'   \item{`conj_rate`}{Conjunctions per sentence.}
+#'   \item{`cv_word_length`}{Coefficient of variation of word length, i.e.
+#'     the standard deviation over the mean. Dividing by the mean is what
+#'     stops this just measuring who uses longer words.}
+#'   \item{`prop_polysyllabic`}{Proportion of tokens with 3+ syllables.}
+#'   \item{`vocab_sophistication`}{Proportion of tokens outside a band of
+#'     common English words.}
 #' }
 #'
 #' @param text Character vector of documents, one document per element.
 #'
 #' @return Numeric matrix with one row per document and five named feature
-#'   columns. Rownames are carried over from `names(text)` when present.
+#'   columns. Row names are carried over from `names(text)` when present.
 #'   A document with no word tokens yields a row of `NA`s.
-#'
-#' @references
-#' Froehling, L., & Zubiaga, A. (2021). Feature-based detection of automated
-#' language models: Tackling GPT-2, GPT-3 and Grover. \emph{PeerJ Computer
-#' Science}, 7, e443.
 #'
 #' @examples
 #' stylo_features(c(
@@ -176,8 +156,7 @@ stylo_features <- function(text) {
     word_len <- nchar(tokens)
     mean_len <- mean(word_len)
 
-    # A one-token document has no within-document spread; report 0 rather
-    # than the NA that sd() would give, so the feature stays defined.
+    #one token has no spread, so report 0 rather than the NA sd() gives
     cv <- if (n_tokens < 2L || mean_len == 0) 0 else stats::sd(word_len) / mean_len
 
     syl <- count_syllables_cpp(tokens)
