@@ -1,0 +1,703 @@
+{
+ "meta": {
+  "count": 3,
+  "per_page": 3,
+  "page": 1,
+  "next_cursor": null
+ },
+ "results": [
+  {
+   "id": "https://openalex.org/W4210423514",
+   "doi": "https://doi.org/10.1109/tro.2022.3141876",
+   "title": "FAST-LIO2: Fast Direct LiDAR-Inertial Odometry",
+   "publication_date": "2022-01-31",
+   "abstract_inverted_index": {
+    "This": [
+     0,
+     58
+    ],
+    "article": [
+     1
+    ],
+    "presents": [
+     2
+    ],
+    "FAST-LIO2:": [
+     3
+    ],
+    "a": [
+     4,
+     14,
+     76,
+     99,
+     155,
+     167,
+     249
+    ],
+    "fast,": [
+     5,
+     29
+    ],
+    "robust,": [
+     6,
+     30
+    ],
+    "and": [
+     7,
+     31,
+     120,
+     122,
+     203,
+     231,
+     238,
+     241,
+     243,
+     261
+    ],
+    "versatile": [
+     8,
+     224
+    ],
+    "LiDAR-inertial": [
+     9,
+     175
+    ],
+    "odometry": [
+     10,
+     202
+    ],
+    "framework.": [
+     11
+    ],
+    "Building": [
+     12
+    ],
+    "on": [
+     13,
+     142,
+     181,
+     267
+    ],
+    "highly": [
+     15
+    ],
+    "efficient": [
+     16,
+     196
+    ],
+    "tightly": [
+     17
+    ],
+    "coupled": [
+     18
+    ],
+    "iterated": [
+     19
+    ],
+    "Kalman": [
+     20
+    ],
+    "filter,": [
+     21
+    ],
+    "FAST-LIO2": [
+     22,
+     161,
+     193,
+     260
+    ],
+    "has": [
+     23
+    ],
+    "two": [
+     24
+    ],
+    "key": [
+     25
+    ],
+    "novelties": [
+     26
+    ],
+    "that": [
+     27,
+     113
+    ],
+    "allow": [
+     28
+    ],
+    "accurate": [
+     32
+    ],
+    "LiDAR": [
+     33,
+     159
+    ],
+    "navigation": [
+     34,
+     176
+    ],
+    "(and": [
+     35,
+     48
+    ],
+    "mapping).": [
+     36
+    ],
+    "The": [
+     37,
+     73
+    ],
+    "first": [
+     38
+    ],
+    "one": [
+     39
+    ],
+    "is": [
+     40,
+     97,
+     194
+    ],
+    "directly": [
+     41
+    ],
+    "registering": [
+     42
+    ],
+    "raw": [
+     43
+    ],
+    "points": [
+     44
+    ],
+    "to": [
+     45,
+     86,
+     199,
+     221,
+     227
+    ],
+    "the": [
+     46,
+     51,
+     60,
+     66,
+     71,
+     93,
+     143,
+     258,
+     262
+    ],
+    "map": [
+     47,
+     100
+    ],
+    "subsequently": [
+     49
+    ],
+    "update": [
+     50
+    ],
+    "map,": [
+     52
+    ],
+    "i.e.,": [
+     53
+    ],
+    "mapping)": [
+     54
+    ],
+    "without": [
+     55
+    ],
+    "extracting": [
+     56
+    ],
+    "features.": [
+     57
+    ],
+    "enables": [
+     59,
+     114
+    ],
+    "exploitation": [
+     61
+    ],
+    "of": [
+     62,
+     75,
+     89,
+     157,
+     187,
+     257
+    ],
+    "subtle": [
+     63
+    ],
+    "features": [
+     64
+    ],
+    "in": [
+     65,
+     151,
+     205,
+     214
+    ],
+    "environment": [
+     67
+    ],
+    "and,": [
+     68
+    ],
+    "hence,": [
+     69
+    ],
+    "increases": [
+     70
+    ],
+    "accuracy.": [
+     72
+    ],
+    "elimination": [
+     74
+    ],
+    "hand-engineered": [
+     77
+    ],
+    "feature": [
+     78
+    ],
+    "extraction": [
+     79
+    ],
+    "module": [
+     80
+    ],
+    "also": [
+     81,
+     190
+    ],
+    "makes": [
+     82
+    ],
+    "it": [
+     83
+    ],
+    "naturally": [
+     84,
+     139
+    ],
+    "adaptable": [
+     85
+    ],
+    "emerging": [
+     87
+    ],
+    "LiDARs": [
+     88,
+     183
+    ],
+    "different": [
+     90
+    ],
+    "scanning": [
+     91
+    ],
+    "patterns;": [
+     92
+    ],
+    "second": [
+     94
+    ],
+    "main": [
+     95
+    ],
+    "novelty": [
+     96
+    ],
+    "maintaining": [
+     98
+    ],
+    "by": [
+     101
+    ],
+    "an": [
+     102,
+     147
+    ],
+    "incremental": [
+     103,
+     109,
+     115
+    ],
+    "k-dimensional": [
+     104
+    ],
+    "(k-d)": [
+     105
+    ],
+    "tree": [
+     106,
+     111
+    ],
+    "data": [
+     107,
+     129,
+     263
+    ],
+    "structure,": [
+     108
+    ],
+    "k-d": [
+     110
+    ],
+    "(ikd-Tree),": [
+     112
+    ],
+    "updates": [
+     116
+    ],
+    "(i.e.,": [
+     117,
+     225
+    ],
+    "point": [
+     118
+    ],
+    "insertion": [
+     119
+    ],
+    "delete)": [
+     121
+    ],
+    "dynamic": [
+     123,
+     128
+    ],
+    "rebalancing.": [
+     124
+    ],
+    "Compared": [
+     125
+    ],
+    "with": [
+     126,
+     184,
+     218
+    ],
+    "existing": [
+     127,
+     253
+    ],
+    "structures": [
+     130
+    ],
+    "(octree,": [
+     131
+    ],
+    "R$^\\ast$-tree,": [
+     132
+    ],
+    "andnanoflannk-d": [
+     133
+    ],
+    "tree),ikd-Treeachieves": [
+     134
+    ],
+    "superior": [
+     135
+    ],
+    "overall": [
+     136
+    ],
+    "performance": [
+     137
+    ],
+    "while": [
+     138,
+     246
+    ],
+    "supports": [
+     140
+    ],
+    "downsampling": [
+     141
+    ],
+    "tree.": [
+     144
+    ],
+    "We": [
+     145
+    ],
+    "conduct": [
+     146
+    ],
+    "exhaustive": [
+     148
+    ],
+    "benchmark": [
+     149
+    ],
+    "comparison": [
+     150
+    ],
+    "19": [
+     152
+    ],
+    "sequences": [
+     153
+    ],
+    "from": [
+     154
+    ],
+    "variety": [
+     156
+    ],
+    "open": [
+     158
+    ],
+    "datasets.": [
+     160
+    ],
+    "achieves": [
+     162
+    ],
+    "consistently": [
+     163
+    ],
+    "higher": [
+     164,
+     250
+    ],
+    "accuracy": [
+     165,
+     251
+    ],
+    "at": [
+     166
+    ],
+    "much": [
+     168
+    ],
+    "lower": [
+     169
+    ],
+    "computation": [
+     170
+    ],
+    "load": [
+     171
+    ],
+    "than": [
+     172,
+     252
+    ],
+    "other": [
+     173
+    ],
+    "state-of-the-art": [
+     174
+    ],
+    "systems.": [
+     177
+    ],
+    "Various": [
+     178
+    ],
+    "real-world": [
+     179
+    ],
+    "experiments": [
+     180
+    ],
+    "solid-state": [
+     182,
+     232
+    ],
+    "small": [
+     185
+    ],
+    "field": [
+     186
+    ],
+    "view": [
+     188
+    ],
+    "are": [
+     189
+    ],
+    "conducted.": [
+     191
+    ],
+    "Overall,": [
+     192
+    ],
+    "computationally": [
+     195
+    ],
+    "(e.g.,": [
+     197,
+     210
+    ],
+    "up": [
+     198,
+     220
+    ],
+    "100": [
+     200
+    ],
+    "Hz": [
+     201
+    ],
+    "mapping": [
+     204
+    ],
+    "large": [
+     206
+    ],
+    "outdoor": [
+     207
+    ],
+    "environments),": [
+     208
+    ],
+    "robust": [
+     209
+    ],
+    "reliable": [
+     211
+    ],
+    "pose": [
+     212
+    ],
+    "estimation": [
+     213
+    ],
+    "cluttered": [
+     215
+    ],
+    "indoor": [
+     216
+    ],
+    "environments": [
+     217
+    ],
+    "rotation": [
+     219
+    ],
+    "1000": [
+     222
+    ],
+    "deg/s),": [
+     223
+    ],
+    "applicable": [
+     226
+    ],
+    "both": [
+     228,
+     265
+    ],
+    "multiline": [
+     229
+    ],
+    "spinning": [
+     230
+    ],
+    "LiDARs,": [
+     233
+    ],
+    "unmanned": [
+     234
+    ],
+    "aerial": [
+     235
+    ],
+    "vehicle": [
+     236
+    ],
+    "(UAV)": [
+     237
+    ],
+    "handheld": [
+     239
+    ],
+    "platforms,": [
+     240
+    ],
+    "Intel-": [
+     242
+    ],
+    "ARM-based": [
+     244
+    ],
+    "processors),": [
+     245
+    ],
+    "still": [
+     247
+    ],
+    "achieving": [
+     248
+    ],
+    "methods.": [
+     254
+    ],
+    "Our": [
+     255
+    ],
+    "implementation": [
+     256
+    ],
+    "system": [
+     259
+    ],
+    "structureikd-Treeare": [
+     264
+    ],
+    "open-sourced": [
+     266
+    ],
+    "Github.": [
+     268
+    ]
+   }
+  },
+  {
+   "id": "https://openalex.org/W0000000002",
+   "doi": "https://doi.org/10.1109/example.2020.0000002",
+   "title": "A Record With No Abstract Indexed",
+   "publication_date": "2020-05-14",
+   "abstract_inverted_index": null
+  },
+  {
+   "id": "https://openalex.org/W0000000003",
+   "doi": "https://doi.org/10.1109/example.2021.0000003",
+   "title": "A Very Short Abstract",
+   "publication_date": "2021-09-02",
+   "abstract_inverted_index": {
+    "This": [
+     0
+    ],
+    "letter": [
+     1
+    ],
+    "reports": [
+     2
+    ],
+    "a": [
+     3
+    ],
+    "compact": [
+     4
+    ],
+    "lidar": [
+     5
+    ],
+    "module.": [
+     6
+    ]
+   }
+  }
+ ]
+}
