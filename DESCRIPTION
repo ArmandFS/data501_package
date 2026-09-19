@@ -1,20 +1,28 @@
 Package: styloprofile
 Type: Package
-Title: Stylometric Features and Mahalanobis Outlier Distances
+Title: Stylometric Reference Profiles and Outlier Distances
 Version: 0.1.0
 Authors@R: person("Armand", "Surbakti", email = "actuallyarmand@gmail.com",
                   role = c("aut", "cre"))
 Description: Extracts interpretable stylometric features from documents and
-    measures how far a document sits from a reference distribution using a
-    Cholesky-based squared Mahalanobis distance. Intended for studying whether
-    machine-generated text is a statistical outlier relative to human writing,
-    following the feature-based framing of Froehling and Zubiaga (2021)
-    <doi:10.7717/peerj-cs.443> and the distance of Mahalanobis (1936).
+    measures how far a document sits from a reference distribution by two
+    complementary routes: a Cholesky-based squared Mahalanobis distance, which
+    responds to a document being extreme, and an angular distance derived from
+    cosine similarity, which responds to the proportions between features being
+    wrong. Reference corpora are assembled from OpenAlex, with the topic,
+    journal and date window as arguments. Intended for studying whether machine-generated
+    text is a statistical outlier relative to human writing, following the
+    feature-based framing of Froehling and Zubiaga (2021)
+    <doi:10.7717/peerj-cs.443>, the distance of Mahalanobis (1936), the vector
+    space model of Salton, Wong and Yang (1975) <doi:10.1145/361219.361220>,
+    and the metric angular form of van Dongen and Enright (2012)
+    <doi:10.48550/arXiv.1208.3145>.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: R (>= 4.0)
-Imports: Rcpp, stats
+Imports: Rcpp, stats, jsonlite, tools, utils
 LinkingTo: Rcpp
 Suggests: testthat (>= 3.0.0), knitr, rmarkdown, microbenchmark
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.0
+LazyData: true

@@ -1,61 +1,398 @@
-# data501_package
-This is a repository of where I'll store my DATA501 progress, code, and R + Rcpp code, and will include relevant documentation, 
+# styloprofile
 
+**DATA501 research project — Armand Surbakti (300680133)**
 
-## styloprofile
+An R package that measures how far a document sits from a statistical profile of
+human writing. Rather than training a binary human-vs-AI classifier, it
+describes typical human writing with five interpretable stylometric features and
+scores new documents against that description by two complementary distances.
 
-The R package in this repository is called **`styloprofile`**. It builds toward a
-stylometric outlier detector: rather than training a binary human-vs-AI
-classifier, it describes typical human writing with a handful of interpretable
-numeric features and measures how far a new document sits from that description,
-using the Mahalanobis distance.
+A high score means a document is unusual *relative to the reference corpus*. It
+is not evidence that the document was machine-generated.
 
-References: Fröhling & Zubiaga (2021), *PeerJ Computer Science* 7:e443;
-Mahalanobis (1936), *Proc. Nat. Inst. Sci. India* 2(1):49–55.
+---
 
-### Install
+## Install
 
 ```r
 # install.packages("remotes")
 remotes::install_github("ArmandFS/data501_package")
 ```
 
-Note the repository is `data501_package` but the package it installs is
-`styloprofile`.
+The repository is `data501_package`; the package it installs is `styloprofile`.
+It compiles C++ via Rcpp, so you need a working toolchain
+([Rtools](https://cran.r-project.org/bin/windows/Rtools/) on Windows, Xcode
+command line tools on macOS).
 
-### Current functions
+## Verify the installation
 
-| Function | Purpose |
-|---|---|
-| `stylo_features()` | Extracts 5 stylometric features from documents |
-| `mahalanobis_sq()` | Squared Mahalanobis distance via a Cholesky factor |
-| `count_syllables_cpp()` | Syllable counter (C++, via Rcpp) |
-| `count_syllables_r()` | Syllable counter (pure R reference implementation) |
+Paste this whole block. It exercises the Rcpp code, the S3 classes, and both
+distance methods, using the corpora bundled with the package.
 
 ```r
 library(styloprofile)
 
-count_syllables_cpp(c("cat", "table", "beautiful"))
-#> [1] 1 2 3
+## 1. the compiled Rcpp function
+count_syllables_cpp(c("cat", "table", "make", "beautiful", "queue"))
+#> [1] 1 2 1 3 1
 
-stylo_features(c(
-  "The cat sat. It was quiet, and nobody moved.",
-  "Consequently, the extraordinary ramifications remained incomprehensible."
-))
+## 2. the OO function -- returns an object with methods
+profile <- build_profile(lidar_reference$abstract)
+#> Profile built from 245 documents on 5 features.
+
+class(profile)
+#> [1] "stylo_profile"
+
+summary(profile)
+
+## 3. score new documents by either method
+scores <- score(lidar_contrast$abstract, profile, method = "mahalanobis")
+class(scores)
+#> [1] "stylo_score"
+
+summary(scores)
+
+## 4. run the unit tests
+testthat::test_local()
+#> [ FAIL 0 | WARN 0 | SKIP 0 | PASS 142 ]
 ```
 
-### Tests
-
-Unit tests cover `mahalanobis_sq()` and `count_syllables_cpp()`.
+To run the full package check from a clone:
 
 ```r
-devtools::test()   # 48 tests
-devtools::check()  # 0 errors, 0 warnings, 0 notes
+devtools::check()   # 0 errors, 0 warnings, 0 notes
 ```
 
-`mahalanobis_sq()` is checked against `stats::mahalanobis()` as an independent
-oracle, and against mathematical identities the distance must satisfy (affine
-invariance, zero at the centre, reduction to Euclidean distance under an
-identity covariance). `count_syllables_cpp()` is checked by differential testing
-against `count_syllables_r()`, plus hand-computed counts so that the two
-implementations cannot be wrong in the same way undetected.
+---
+
+## How the assessment criteria are met
+
+### 1. An OO R function using Rcpp
+
+**`build_profile()`** and **`score()`**.
+
+`build_profile()` takes a corpus and returns an object of class
+`stylo_profile`. `score()` takes documents and a profile and returns an object
+of class `stylo_score`. Both are S3 classes with `print` and `summary` methods,
+and `summary` itself returns a classed object with its own `print` method — the
+same structure `stats::aov()` uses.
+
+| Class | Constructor | Methods |
+|---|---|---|
+| `stylo_profile` | `build_profile()` | `print`, `summary` |
+| `summary.stylo_profile` | `summary()` | `print` |
+| `stylo_score` | `score()` | `print`, `summary` |
+| `summary.stylo_score` | `summary()` | `print` |
+
+**Where Rcpp enters.** Given raw text, `build_profile()` calls
+`stylo_features()`, which calls the compiled `count_syllables_cpp()` to compute
+`prop_polysyllabic`. The call chain is:
+
+```
+build_profile(text) -> stylo_features() -> count_syllables_cpp()   [C++]
+                                        -> .Call()                 [RcppExports.R]
+                                        -> src/count_syllables.cpp
+```
+
+Syllable counting is a character-by-character scan carrying state between
+iterations, which is where R's interpreter overhead dominates and vectorisation
+gives nothing. Measured on 10,000 words over 20 repetitions:
+
+| Implementation | Median |
+|---|---|
+| `count_syllables_cpp()` | 1.97 ms |
+| `count_syllables_r()` | 27.11 ms |
+
+**13.8× faster**, which is what justifies the compilation step.
+
+`stylo_score` deliberately subclasses a numeric vector, so `d >= 0`,
+`median(d)` and `length(d)` all still work; the class adds methods without
+taking anything away.
+
+### 2. An R function that tests the previous function
+
+`count_syllables_r()` is a pure-R reimplementation of the same algorithm as
+`count_syllables_cpp()`, written to serve as the **test oracle**. Differential
+testing in `tests/testthat/test-syllables.R` compares the two over a curated
+word list, 500 randomly generated strings, and deliberately messy input:
+
+```r
+test_that("agrees with the R implementation on random letter strings", {
+  set.seed(7)
+  words <- vapply(seq_len(500), function(i) {
+    paste(sample(letters, sample(1:12, 1), replace = TRUE), collapse = "")
+  }, character(1))
+  expect_equal(count_syllables_cpp(words), count_syllables_r(words))
+})
+```
+
+The test functions themselves live in `tests/testthat/`, one file per source
+file, and run via `devtools::test()` or `testthat::test_local()`.
+
+### 3. Unit tests: what was tested and how
+
+```r
+devtools::test()
+#> [ FAIL 0 | WARN 0 | SKIP 0 | PASS 142 ]
+```
+
+**142 expectations across 77 `test_that` blocks in 5 files:**
+
+| File | Blocks | Expectations | Covers |
+|---|---|---|---|
+| `test-angular.R` | 12 | 21 | `cosine_sim()`, `angular_dist()` |
+| `test-corpus.R` | 20 | 35 | corpus query, parsing, bundled data |
+| `test-mahalanobis.R` | 13 | 22 | `mahalanobis_sq()` |
+| `test-profile.R` | 19 | 38 | `build_profile()`, `score()`, S3 methods |
+| `test-syllables.R` | 13 | 26 | `count_syllables_cpp()` / `_r()` |
+
+#### The selection principle
+
+Functions were chosen for testing not because they are the most important, but
+because **their correct answers are knowable independently of how they are
+implemented.** A test written by reading the implementation and asserting it
+returns what it currently returns proves only that the code has not changed; it
+cannot detect that the code was wrong from the start. A test is evidence only
+when the expected value comes from somewhere other than the code under test.
+
+Four kinds of oracle are used.
+
+**(a) Independent implementations.** `mahalanobis_sq()` is checked against
+`stats::mahalanobis()` — different authors, different algorithm (explicit
+inverse rather than a Cholesky solve) — at p = 1, 2, 5 and 10. Because the two
+share no code, agreement is evidence rather than a tautology. The same logic
+drives `count_syllables_cpp()` against `count_syllables_r()`.
+
+**(b) Certified values.** Angles are known in advance from geometry, so these
+would catch the function being wrong at the first commit:
+
+```r
+expect_equal(angular_dist(c(1, 0), c(1, 0)),  0)      # identical
+expect_equal(angular_dist(c(1, 0), c(1, 1)),  0.25)   # 45 degrees
+expect_equal(angular_dist(c(1, 0), c(0, 1)),  0.5)    # orthogonal
+expect_equal(angular_dist(c(1, 0), c(-1, 0)), 1)      # opposing
+```
+
+Eight syllable counts are pinned the same way (`cat` = 1, `table` = 2,
+`queue` = 1, `rhythm` = 1). This matters because differential testing alone has
+a specific weakness: two implementations written by the same author from the
+same specification can be wrong in the same way and would agree perfectly.
+Hand-computed anchors catch that; the cross-check catches translation errors.
+Both are needed.
+
+**(c) Mathematical identities.** Properties any correct implementation must
+satisfy, whatever algorithm it uses:
+
+- *Reduction to Euclidean distance.* When Σ = I, D² must equal the squared
+  Euclidean distance from the centre.
+- *Zero at the centre.* D²(μ) = 0 exactly.
+- *Affine invariance.* Under x ↦ Ax + b with Σ ↦ AΣAᵀ, every distance is
+  unchanged — the distance cannot depend on the units the features are measured
+  in. This is the strongest test in the suite: an implementation could pass the
+  base-R comparison through a shared misunderstanding, but is very unlikely to
+  be *accidentally* affine-invariant.
+- *Triangle inequality.* `acos(cos θ)/π` is a true metric; `1 − cos θ` is not.
+  The test asserts both halves, so it also justifies the design choice:
+
+  | | d(a,c) | d(a,b) + d(b,c) | Metric? |
+  |---|---|---|---|
+  | Angular | 0.5 | 0.25 + 0.25 = 0.5 | holds |
+  | Cosine | 1.0 | 0.293 + 0.293 = 0.586 | violated |
+
+- *Factor correctness.* `t(R) %*% R` must reproduce the covariance it came from.
+
+**(d) Invalid input and edge cases.** Each malformed argument has a test
+asserting both that an error is raised and that its *message names the problem*,
+rather than a plausible-looking number being returned:
+
+```r
+expect_error(mahalanobis_sq(x, center[1:2], R), "length 2.*3 columns")
+```
+
+Rejecting `NA` rather than propagating it is deliberate — an `NA` distance would
+flow into a downstream verdict and be easy to miss.
+
+Edge cases get more attention on the compiled function than its line count
+suggests, because a bug in C++ is quieter than the same bug in R. The silent-`e`
+branch indexes `w[len - 3]`, so 1-to-3 letter words are exactly the inputs that
+could read out of bounds. In R an out-of-range index raises an error or returns
+`NA`; in C++ it reads memory the string does not own, which may return plausible
+garbage, or crash, or appear to work until the code runs on another machine.
+Words of length 1, 2 and 3 are therefore tested explicitly.
+
+#### Two bugs the tests actually caught
+
+These were found while writing the tests, not afterwards:
+
+1. **`as.Date("30-11-2022", format = "%Y-%m-%d")` returns year 30**, not an
+   error — R's date parser is lenient. `build_oa_filter()` now checks the
+   string's shape before its value.
+2. **`acos()` returns `NaN` on a self-comparison.** Floating point pushes an
+   exact self-similarity to `1 + 2.2e-16`, and `acos()` of anything above 1 is
+   undefined. The clamp in `cosine_sim()` is load-bearing and has its own test.
+
+#### What is deliberately not tested
+
+`stylo_features()` has no independent source of truth — there is no authority on
+what the coefficient of variation of word length in a given paragraph *should*
+be. It is exercised indirectly through the profile and corpus tests rather than
+pinned to values read off its own output.
+
+#### No test touches the network
+
+`fetch_corpus()` is the only function that opens a socket, and it is never
+called from `tests/`. Corpus parsing is tested against a saved API response in
+`inst/extdata/openalex_sample.json` — one usable record, one with a null
+abstract, one below the word floor. That keeps `R CMD check` offline,
+repeatable, and fast.
+
+---
+
+## Functions
+
+| Function | Purpose |
+|---|---|
+| `fetch_corpus()` | Downloads a corpus of abstracts from OpenAlex |
+| `build_oa_filter()` | Builds the OpenAlex query for a topic, journal and window |
+| `read_corpus_json()` | Parses a saved OpenAlex response |
+| `stylo_features()` | Extracts 5 stylometric features from documents |
+| `build_profile()` | Summarises a corpus into a `stylo_profile` |
+| `score()` | Scores documents against a profile, returns a `stylo_score` |
+| `mahalanobis_sq()` | Squared Mahalanobis distance via a Cholesky factor |
+| `angular_dist()` | Angular distance in `[0, 1]` |
+| `cosine_sim()` | Cosine similarity in `[-1, 1]` |
+| `count_syllables_cpp()` | Syllable counter (C++, via Rcpp) |
+| `count_syllables_r()` | Syllable counter (pure R, the test oracle) |
+
+### The features
+
+| Feature | Definition |
+|---|---|
+| `mean_sentence_length` | Word tokens per sentence |
+| `conj_rate` | Coordinating and subordinating conjunctions per sentence |
+| `cv_word_length` | Coefficient of variation of word length, s/x̄ |
+| `prop_polysyllabic` | Proportion of tokens with three or more syllables |
+| `vocab_sophistication` | Proportion of tokens outside a 517-word common band |
+
+Each is a rate, proportion or ratio, so documents of different lengths stay
+comparable.
+
+### The two distances
+
+They answer different questions, which is why both are offered.
+
+- **Mahalanobis** responds to a document being *extreme*, once the spread and
+  correlation of the features are accounted for. Computed from a Cholesky
+  factor rather than an explicit inverse, so a profile factorises once and
+  reuses it for every document scored.
+- **Angular** divides each feature by its reference standard deviation and
+  measures the angle to the reference direction, so it responds to the
+  *proportions between features* being wrong even when nothing is extreme.
+
+Scaling but not centring is deliberate: subtracting the centre would place the
+reference at the origin, where a direction — and so an angle — does not exist.
+
+---
+
+## Corpora
+
+Both corpora are lidar articles from a **single journal**, the IEEE Journal of
+Selected Topics in Applied Earth Observations and Remote Sensing (OpenAlex
+`S117727964`), retrieved from OpenAlex:
+
+| Dataset | Window | n | Median abstract |
+|---|---|---|---|
+| `lidar_reference` | 2008 → 2022-12-31 | 245 | 223 words |
+| `lidar_contrast` | 2023-01-01 → 2026 | 211 | 231 words |
+
+Holding the journal fixed removes venue as a source of stylistic variation, and
+abstracts within one journal run to a similar length, which matters because
+`mean_sentence_length` and `conj_rate` are noisy on short documents. Each
+dataset is the **complete** query result rather than a sample, so both are
+exactly reproducible from the filter recorded in their `filter` attribute.
+
+Topic, journal and both dates are arguments:
+
+```r
+fetch_corpus("lidar", from = "2008-01-01", to = "2022-12-31")
+fetch_corpus("hyperspectral", from = "2008-01-01", to = "2022-12-31")
+fetch_corpus("lidar", source = NULL, publisher = "P4310319808")  # all of IEEE
+```
+
+Results are cached under `tools::R_user_dir()`. Re-run
+`data-raw/fetch_lidar_corpus.R` to rebuild the bundled datasets.
+
+**Why OpenAlex and not IEEE Xplore.** IEEE Xplore's terms prohibit systematic
+downloading, and violating them can terminate e-resource access for an entire
+institution. OpenAlex is an open index of scholarly works released under CC0,
+with no paywall or authentication, so no access agreement is involved. The
+trade is that the unit of analysis is the abstract rather than the full text.
+
+---
+
+## Results
+
+Holding out 80 of the 245 reference abstracts, building a profile on the
+remaining 165, and scoring both the held-out pre-2023 documents and all 211
+post-2023 documents:
+
+| Method | Median, pre | Median, post | Flagged, pre | Flagged, post | Wilcoxon |
+|---|---|---|---|---|---|
+| Mahalanobis | 4.130 | 6.061 | 7.5% | 17.1% | p = 0.00024 |
+| Angular | 0.0227 | 0.0295 | 6.2% | 18.0% | p = 0.000015 |
+
+Both methods agree: post-2023 abstracts sit further from the pre-2023 profile,
+and roughly **2.5× as many are flagged**. The features moving most are
+`vocab_sophistication` (+0.055) and `prop_polysyllabic` (+0.037) — rarer, longer
+words — while sentences are slightly shorter.
+
+Cut-offs come from the reference corpus, never from the scores being judged: the
+chi-squared 95% point on p degrees of freedom for Mahalanobis, and the 95th
+percentile of the reference documents' own angles for the angular distance.
+
+`summary()` on a profile also reports the covariance condition number, which on
+this corpus is ~1.8×10⁵ — the features are close to collinear, and
+`build_profile(shrink = 0.1)` brings it down to ~46.
+
+---
+
+## Limitations
+
+1. **The contrast corpus is not labelled.** It is defined by its date window,
+   not by authorship. These results support a claim about a *distribution shift
+   between two time periods*, not about detection accuracy, precision or
+   recall, which would need labels.
+2. **The windows are asymmetric.** Fifteen years against four, so the reference
+   corpus averages over far more stylistic drift than the contrast corpus.
+3. **Style changes for reasons unrelated to language models** — the field, the
+   author pool and editorial practice all moved over the same period.
+4. **Fairness.** `vocab_sophistication` and `mean_sentence_length` correlate
+   with English proficiency, formal education and learning disabilities such as
+   dyslexia. A non-native speaker writing ordinary prose may be flagged.
+   Fröhling and Zubiaga (2021) identify this false-positive risk as a
+   first-order design concern. This package is a research and diagnostic tool
+   for studying stylometry, not a detector.
+
+---
+
+## References
+
+Fröhling, L., & Zubiaga, A. (2021). Feature-based detection of automated
+language models: Tackling GPT-2, GPT-3 and Grover. *PeerJ Computer Science*, 7,
+e443.
+
+Mahalanobis, P. C. (1936). On the generalised distance in statistics.
+*Proceedings of the National Institute of Sciences of India*, 2(1), 49–55.
+
+Priem, J., Piwowar, H., & Orr, R. (2022). OpenAlex: A fully-open index of
+scholarly works, authors, venues, institutions, and concepts. *arXiv:2205.01833*.
+
+Salton, G., Wong, A., & Yang, C. S. (1975). A vector space model for automatic
+indexing. *Communications of the ACM*, 18(11), 613–620.
+
+van Dongen, S., & Enright, A. J. (2012). Metric distances derived from cosine
+similarity and Pearson and Spearman correlations. *arXiv:1208.3145*.
+
+---
+
+MIT licensed.
