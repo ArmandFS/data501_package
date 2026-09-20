@@ -1,6 +1,6 @@
 # styloprofile
 
-**DATA501 research project — Armand Surbakti (300680133)**
+**DATA501 Software Project — Armand Surbakti (300680133)**
 
 An R package that measures how far a document sits from a statistical profile of
 human writing. Rather than training a binary human-vs-AI classifier, it
@@ -12,7 +12,7 @@ is not evidence that the document was machine-generated.
 
 ---
 
-## Install
+## Installation Guide And Steps
 
 ```r
 # install.packages("remotes")
@@ -20,14 +20,14 @@ remotes::install_github("ArmandFS/data501_package")
 ```
 
 The repository is `data501_package`; the package it installs is `styloprofile`.
-It compiles C++ via Rcpp, so you need a working toolchain
+It compiles C++ via Rcpp, so you might need a specific toolchain, and also depending on your operating system as well.
 ([Rtools](https://cran.r-project.org/bin/windows/Rtools/) on Windows, Xcode
 command line tools on macOS).
 
-## Verify the installation
+## Verifying the Installation
 
-Paste this whole block. It exercises the Rcpp code, the S3 classes, and both
-distance methods, using the corpora bundled with the package.
+When pasting this whole code block, It utilizes the Rcpp code, the various S3 classes, and both
+distance methods (mahalanobis and cosine similarity), using the corpus bundled with the package.
 
 ```r
 library(styloprofile)
@@ -65,9 +65,9 @@ devtools::check()   # 0 errors, 0 warnings, 0 notes
 
 ---
 
-## How the assessment criteria are met
+## Meeting the assessment criteria
 
-### 1. An OO R function using Rcpp
+### 1. This is an object oriented function with Rcpp as well. 
 
 **`build_profile()`** and **`score()`**.
 
@@ -77,16 +77,16 @@ of class `stylo_score`. Both are S3 classes with `print` and `summary` methods,
 and `summary` itself returns a classed object with its own `print` method — the
 same structure `stats::aov()` uses.
 
-| Class | Constructor | Methods |
+| Classes | Constructors | Methods |
 |---|---|---|
 | `stylo_profile` | `build_profile()` | `print`, `summary` |
 | `summary.stylo_profile` | `summary()` | `print` |
 | `stylo_score` | `score()` | `print`, `summary` |
 | `summary.stylo_score` | `summary()` | `print` |
 
-**Where Rcpp enters.** Given raw text, `build_profile()` calls
+**The Rcpp function.** Given any raw text from a document, `build_profile()` calls
 `stylo_features()`, which calls the compiled `count_syllables_cpp()` to compute
-`prop_polysyllabic`. The call chain is:
+`prop_polysyllabic`. The call chain and flow is:
 
 ```
 build_profile(text) -> stylo_features() -> count_syllables_cpp()   [C++]
@@ -95,26 +95,24 @@ build_profile(text) -> stylo_features() -> count_syllables_cpp()   [C++]
 ```
 
 Syllable counting is a character-by-character scan carrying state between
-iterations, which is where R's interpreter overhead dominates and vectorisation
-gives nothing. Measured on 10,000 words over 20 repetitions:
+iterations. Measured on 10,000 words over 20 repetitions:
 
-| Implementation | Median |
+| Implementation Method | Median |
 |---|---|
 | `count_syllables_cpp()` | 1.97 ms |
 | `count_syllables_r()` | 27.11 ms |
 
-**13.8× faster**, which is what justifies the compilation step.
+This is around **13.8× faster**, which is what justifies the compilation step.
 
 `stylo_score` deliberately subclasses a numeric vector, so `d >= 0`,
-`median(d)` and `length(d)` all still work; the class adds methods without
-taking anything away.
+`median(d)` and `length(d)` all still works.
 
 ### 2. An R function that tests the previous function
 
-`count_syllables_r()` is a pure-R reimplementation of the same algorithm as
+`count_syllables_r()` is an R implementation of the same algorithm as
 `count_syllables_cpp()`, written to serve as the **test oracle**. Differential
 testing in `tests/testthat/test-syllables.R` compares the two over a curated
-word list, 500 randomly generated strings, and deliberately messy input:
+word list, roughly 500 randomly generated strings, and a messy input on purpose:
 
 ```r
 test_that("agrees with the R implementation on random letter strings", {
@@ -126,10 +124,9 @@ test_that("agrees with the R implementation on random letter strings", {
 })
 ```
 
-The test functions themselves live in `tests/testthat/`, one file per source
-file, and run via `devtools::test()` or `testthat::test_local()`.
+The test functions and files are in `tests/testthat/`, and is run via `devtools::test()` or `testthat::test_local()`.
 
-### 3. Unit tests: what was tested and how
+### 3. The different unit tests
 
 ```r
 devtools::test()
@@ -148,19 +145,15 @@ devtools::test()
 
 #### The selection principle
 
-Functions were chosen for testing not because they are the most important, but
-because **their correct answers are knowable independently of how they are
-implemented.** A test written by reading the implementation and asserting it
+Functions were chosen for testing because their correct answers are knowable independently of how they are
+implemented. A test written by reading the implementation and asserting it
 returns what it currently returns proves only that the code has not changed; it
-cannot detect that the code was wrong from the start. A test is evidence only
-when the expected value comes from somewhere other than the code under test.
+cannot detect that the code was wrong from the start.
 
 Four kinds of oracle are used.
 
 **(a) Independent implementations.** `mahalanobis_sq()` is checked against
-`stats::mahalanobis()` — different authors, different algorithm (explicit
-inverse rather than a Cholesky solve) — at p = 1, 2, 5 and 10. Because the two
-share no code, agreement is evidence rather than a tautology. The same logic
+`stats::mahalanobis()`. The same logic
 drives `count_syllables_cpp()` against `count_syllables_r()`.
 
 **(b) Certified values.** Angles are known in advance from geometry, so these
@@ -174,10 +167,10 @@ expect_equal(angular_dist(c(1, 0), c(-1, 0)), 1)      # opposing
 ```
 
 Eight syllable counts are pinned the same way (`cat` = 1, `table` = 2,
-`queue` = 1, `rhythm` = 1). This matters because differential testing alone has
+`queue` = 1, `rhythm` = 1). This is good because differential testing alone has
 a specific weakness: two implementations written by the same author from the
 same specification can be wrong in the same way and would agree perfectly.
-Hand-computed anchors catch that; the cross-check catches translation errors.
+Hand-computed anchors would catch that; the cross-check catches translation errors.
 Both are needed.
 
 **(c) Mathematical identities.** Properties any correct implementation must
@@ -188,11 +181,9 @@ satisfy, whatever algorithm it uses:
 - *Zero at the centre.* D²(μ) = 0 exactly.
 - *Affine invariance.* Under x ↦ Ax + b with Σ ↦ AΣAᵀ, every distance is
   unchanged — the distance cannot depend on the units the features are measured
-  in. This is the strongest test in the suite: an implementation could pass the
-  base-R comparison through a shared misunderstanding, but is very unlikely to
-  be *accidentally* affine-invariant.
+  in. 
 - *Triangle inequality.* `acos(cos θ)/π` is a true metric; `1 − cos θ` is not.
-  The test asserts both halves, so it also justifies the design choice:
+  The test asserts both halves, so it also justifies why I chose that design choice.
 
   | | d(a,c) | d(a,b) + d(b,c) | Metric? |
   |---|---|---|---|
@@ -216,9 +207,7 @@ Edge cases get more attention on the compiled function than its line count
 suggests, because a bug in C++ is quieter than the same bug in R. The silent-`e`
 branch indexes `w[len - 3]`, so 1-to-3 letter words are exactly the inputs that
 could read out of bounds. In R an out-of-range index raises an error or returns
-`NA`; in C++ it reads memory the string does not own, which may return plausible
-garbage, or crash, or appear to work until the code runs on another machine.
-Words of length 1, 2 and 3 are therefore tested explicitly.
+`NA`.
 
 #### Two bugs the tests actually caught
 
@@ -230,21 +219,6 @@ These were found while writing the tests, not afterwards:
 2. **`acos()` returns `NaN` on a self-comparison.** Floating point pushes an
    exact self-similarity to `1 + 2.2e-16`, and `acos()` of anything above 1 is
    undefined. The clamp in `cosine_sim()` is load-bearing and has its own test.
-
-#### What is deliberately not tested
-
-`stylo_features()` has no independent source of truth — there is no authority on
-what the coefficient of variation of word length in a given paragraph *should*
-be. It is exercised indirectly through the profile and corpus tests rather than
-pinned to values read off its own output.
-
-#### No test touches the network
-
-`fetch_corpus()` is the only function that opens a socket, and it is never
-called from `tests/`. Corpus parsing is tested against a saved API response in
-`inst/extdata/openalex_sample.json` — one usable record, one with a null
-abstract, one below the word floor. That keeps `R CMD check` offline,
-repeatable, and fast.
 
 ---
 
@@ -274,7 +248,7 @@ repeatable, and fast.
 | `prop_polysyllabic` | Proportion of tokens with three or more syllables |
 | `vocab_sophistication` | Proportion of tokens outside a 517-word common band |
 
-Each is a rate, proportion or ratio, so documents of different lengths stay
+Each is a rate, proportion or ratio, so documents of different lengths can stay
 comparable.
 
 ### The two distances
@@ -287,14 +261,11 @@ They answer different questions, which is why both are offered.
   reuses it for every document scored.
 - **Angular** divides each feature by its reference standard deviation and
   measures the angle to the reference direction, so it responds to the
-  *proportions between features* being wrong even when nothing is extreme.
-
-Scaling but not centring is deliberate: subtracting the centre would place the
-reference at the origin, where a direction — and so an angle — does not exist.
+  proportions between features being wrong even when nothing is extreme.
 
 ---
 
-## Corpora
+## Corpus Database
 
 Both corpora are lidar articles from a **single journal**, the IEEE Journal of
 Selected Topics in Applied Earth Observations and Remote Sensing (OpenAlex
@@ -311,7 +282,7 @@ abstracts within one journal run to a similar length, which matters because
 dataset is the **complete** query result rather than a sample, so both are
 exactly reproducible from the filter recorded in their `filter` attribute.
 
-Topic, journal and both dates are arguments:
+Topic, journal and both dates are put as arguments here:
 
 ```r
 fetch_corpus("lidar", from = "2008-01-01", to = "2022-12-31")
@@ -346,6 +317,10 @@ and roughly **2.5× as many are flagged**. The features moving most are
 `vocab_sophistication` (+0.055) and `prop_polysyllabic` (+0.037) — rarer, longer
 words — while sentences are slightly shorter.
 
+The contrast corpus is not labelled. It is defined by publication date, not by
+authorship, so this is a shift in the distribution between two time periods and
+not a measure of detection accuracy.
+
 Cut-offs come from the reference corpus, never from the scores being judged: the
 chi-squared 95% point on p degrees of freedom for Mahalanobis, and the 95th
 percentile of the reference documents' own angles for the angular distance.
@@ -356,24 +331,6 @@ this corpus is ~1.8×10⁵ — the features are close to collinear, and
 
 ---
 
-## Limitations
-
-1. **The contrast corpus is not labelled.** It is defined by its date window,
-   not by authorship. These results support a claim about a *distribution shift
-   between two time periods*, not about detection accuracy, precision or
-   recall, which would need labels.
-2. **The windows are asymmetric.** Fifteen years against four, so the reference
-   corpus averages over far more stylistic drift than the contrast corpus.
-3. **Style changes for reasons unrelated to language models** — the field, the
-   author pool and editorial practice all moved over the same period.
-4. **Fairness.** `vocab_sophistication` and `mean_sentence_length` correlate
-   with English proficiency, formal education and learning disabilities such as
-   dyslexia. A non-native speaker writing ordinary prose may be flagged.
-   Fröhling and Zubiaga (2021) identify this false-positive risk as a
-   first-order design concern. This package is a research and diagnostic tool
-   for studying stylometry, not a detector.
-
----
 
 ## References
 
