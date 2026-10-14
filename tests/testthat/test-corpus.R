@@ -70,6 +70,75 @@ test_that("rejects an empty topic", {
                "non-empty string")
 })
 
+# --- found by Claudia Mark's peer review: has_abstract / source / future dates ---
+
+test_that("rejects a has_abstract that isn't TRUE or FALSE", {
+  #a string like "yes" used to just make the has_abstract clause vanish from
+  #the filter instead of being rejected
+  expect_error(
+    build_oa_filter("lidar", "2008-01-01", "2022-12-31", has_abstract = "yes"),
+    "TRUE or FALSE"
+  )
+  expect_error(
+    build_oa_filter("lidar", "2008-01-01", "2022-12-31", has_abstract = NA),
+    "TRUE or FALSE"
+  )
+})
+
+test_that("has_abstract = FALSE still builds a valid filter with no clause", {
+  f <- build_oa_filter("lidar", "2008-01-01", "2022-12-31", has_abstract = FALSE)
+  expect_false(grepl("has_abstract", f, fixed = TRUE))
+})
+
+test_that("rejects a source that isn't a valid OpenAlex source ID", {
+  #an id like 123 used to be accepted here and only fail once it reached
+  #the OpenAlex API as a 400 Bad Request
+  expect_error(
+    build_oa_filter("machine learning", "2020-01-01", "2020-12-31", source = 123),
+    "OpenAlex source ID"
+  )
+  expect_error(
+    build_oa_filter("machine learning", "2020-01-01", "2020-12-31", source = "abc"),
+    "OpenAlex source ID"
+  )
+})
+
+test_that("rejects a publisher that isn't a valid OpenAlex publisher ID", {
+  expect_error(
+    build_oa_filter("lidar", "2008-01-01", "2022-12-31",
+                    source = NULL, publisher = 123),
+    "OpenAlex publisher ID"
+  )
+})
+
+test_that("a well-formed source or publisher id is still accepted", {
+  expect_no_condition <- function(expr) {
+    expect_error(expr, NA)
+    expect_warning(expr, NA)
+  }
+  expect_no_condition(
+    build_oa_filter("lidar", "2008-01-01", "2022-12-31", source = "S117727964")
+  )
+  expect_no_condition(
+    build_oa_filter("lidar", "2008-01-01", "2022-12-31",
+                    source = NULL, publisher = "P4310319808")
+  )
+})
+
+test_that("warns when the requested window is entirely in the future", {
+  expect_warning(
+    build_oa_filter("test", "2030-01-01", "2030-12-31"),
+    "future"
+  )
+})
+
+test_that("a window that has already started raises no future-date warning", {
+  expect_warning(
+    build_oa_filter("lidar", "2008-01-01", "2022-12-31"),
+    NA
+  )
+})
+
 # --- parsing a saved response ---
 
 sample_json <- function() {

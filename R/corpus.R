@@ -64,14 +64,17 @@
 #' @param topic Search term, matched against title and abstract.
 #' @param from,to Date bounds as `"YYYY-MM-DD"` strings, both inclusive.
 #' @param source OpenAlex source (journal) ID to restrict to, or `NULL` for
-#'   any journal. Defaults to the IEEE Journal of Selected Topics in Applied
-#'   Earth Observations and Remote Sensing.
+#'   any journal. Must match `"S"` followed by digits, e.g. `"S117727964"`.
+#'   Defaults to the IEEE Journal of Selected Topics in Applied Earth
+#'   Observations and Remote Sensing.
 #' @param publisher OpenAlex publisher ID to restrict to, or `NULL` for any
-#'   publisher. Redundant when `source` is given, since a journal has one
-#'   publisher. `"P4310319808"` is IEEE.
+#'   publisher. Must match `"P"` followed by digits, e.g. `"P4310319808"`.
+#'   Redundant when `source` is given, since a journal has one publisher.
+#'   `"P4310319808"` is IEEE.
 #' @param type OpenAlex work type, or `NULL` for any type. `"article"` excludes
 #'   conference papers, preprints and editorials.
 #' @param has_abstract Restrict to records that actually carry an abstract.
+#'   Must be `TRUE` or `FALSE`.
 #'
 #' @return A single filter string.
 #'
@@ -95,6 +98,25 @@ build_oa_filter <- function(topic,
       !nzchar(trimws(topic))) {
     stop("`topic` must be a single non-empty string.", call. = FALSE)
   }
+  if (!is.logical(has_abstract) || length(has_abstract) != 1L ||
+      is.na(has_abstract)) {
+    stop("`has_abstract` must be TRUE or FALSE.", call. = FALSE)
+  }
+  #these are OpenAlex entity IDs: a letter prefix naming the entity type
+  #("S" source, "P" publisher) followed by digits. Anything else is not a
+  #valid ID and would otherwise reach the OpenAlex API as a malformed
+  #request instead of a clear error here.
+  check_oa_id <- function(id, nm, kind, prefix, example) {
+    if (is.null(id)) return(invisible())
+    if (!is.character(id) || length(id) != 1L || is.na(id) ||
+        !grepl(sprintf("^%s[0-9]+$", prefix), id)) {
+      stop(sprintf("`%s` must be a valid OpenAlex %s ID, e.g. \"%s\".",
+                   nm, kind, example),
+           call. = FALSE)
+    }
+  }
+  check_oa_id(source, "source", "source", "S", "S117727964")
+  check_oa_id(publisher, "publisher", "publisher", "P", "P4310319808")
 
   parse_date <- function(d, nm) {
     if (!is.character(d) || length(d) != 1L) {
@@ -119,6 +141,13 @@ build_oa_filter <- function(topic,
   if (d_from > d_to) {
     stop(sprintf("`from` (%s) must be before `to` (%s).", from, to),
          call. = FALSE)
+  }
+  #a window that has not started yet cannot have any published works in it,
+  #which would otherwise surface only as a silently empty corpus
+  if (d_from > Sys.Date()) {
+    warning(sprintf(
+      "`from` (%s) is in the future; this query is likely to return no results.",
+      from), call. = FALSE)
   }
 
   parts <- c(

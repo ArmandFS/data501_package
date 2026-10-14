@@ -20,17 +20,20 @@ build_oa_filter(
 \item{from, to}{Date bounds as `"YYYY-MM-DD"` strings, both inclusive.}
 
 \item{source}{OpenAlex source (journal) ID to restrict to, or `NULL` for
-any journal. Defaults to the IEEE Journal of Selected Topics in Applied
-Earth Observations and Remote Sensing.}
+any journal. Must match `"S"` followed by digits, e.g. `"S117727964"`.
+Defaults to the IEEE Journal of Selected Topics in Applied Earth
+Observations and Remote Sensing.}
 
 \item{publisher}{OpenAlex publisher ID to restrict to, or `NULL` for any
-publisher. Redundant when `source` is given, since a journal has one
-publisher. `"P4310319808"` is IEEE.}
+publisher. Must match `"P"` followed by digits, e.g. `"P4310319808"`.
+Redundant when `source` is given, since a journal has one publisher.
+`"P4310319808"` is IEEE.}
 
 \item{type}{OpenAlex work type, or `NULL` for any type. `"article"` excludes
 conference papers, preprints and editorials.}
 
-\item{has_abstract}{Restrict to records that actually carry an abstract.}
+\item{has_abstract}{Restrict to records that actually carry an abstract.
+Must be `TRUE` or `FALSE`.}
 }
 \value{
 A single filter string.
