@@ -6,7 +6,7 @@
 This document records what Claudia's peer assessment found and what was changed in response. It pairs
 with `PEER_ASSESSMENT_PLAN.md`, the document she was assessing against.
 
-## What she checked, and what needed no change
+## What was checked in the Peer Review Assessment, and what needed no changing at all
 
 Claudia's report covers three layers: the 142 automated `testthat` tests (all passing, 0 failures/
 warnings/skips; `R CMD check` at 0 errors/0 warnings/1 environmental NOTE), every manual test specified in
@@ -18,7 +18,7 @@ specified.
 None of the above needed any change. The numerical core (distances, feature extraction, the OO workflow)
 and the validation `build_oa_filter()` already had are all confirmed correct by her testing.
 
-## What her independent testing found, and the fix for each
+## What the assesor's independent testing found, and the fix for each
 
 All three findings were in `build_oa_filter()` (`R/corpus.R`), the function that assembles the OpenAlex
 query filter and which `fetch_corpus()` calls before making any network request.
@@ -39,7 +39,7 @@ unaffected — `has_abstract = FALSE` still correctly omits the clause.
 Error: `has_abstract` must be TRUE or FALSE.
 ```
 
-### 2. `source` (and `publisher`) accepted anything
+### 2. `source` (and `publisher`) accepted anything, massive problem that needed fixing
 
 **Finding (slide 12):** `source` should be a valid OpenAlex source ID such as `"S117727964"`, but nothing
 checked its shape. Passing `source = 123` was accepted by `build_oa_filter()`, built into a filter string,
