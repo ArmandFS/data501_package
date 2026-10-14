@@ -1,0 +1,101 @@
+---
+title: "Getting started with styloprofile"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with styloprofile}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6, fig.height = 4)
+```
+
+## What this package does
+
+`styloprofile` measures how far a document sits from a statistical profile of human writing, rather
+than training a human-vs-AI classifier. It describes typical writing with five interpretable
+stylometric features (sentence length, conjunction use, variation in word length, syllable
+complexity, vocabulary sophistication), summarises a reference corpus into a `stylo_profile`, and
+scores new documents against it with two complementary distances. A high score means a document is
+unusual *relative to the reference corpus* -- not evidence that it was machine-generated.
+
+This vignette runs end to end using the two corpora bundled with the package, so it needs no
+network access. For fetching a corpus of your own from OpenAlex, see `?fetch_corpus`.
+
+```{r setup}
+library(styloprofile)
+```
+
+## 1. The bundled corpora
+
+`lidar_reference` and `lidar_contrast` are abstracts of lidar articles from one journal (IEEE
+JSTARS), retrieved from OpenAlex and split by publication date: `lidar_reference` runs through the
+end of 2022, `lidar_contrast` from 2023 onward.
+
+```{r}
+nrow(lidar_reference)
+nrow(lidar_contrast)
+lidar_reference$abstract[1]
+```
+
+## 2. Extracting the features directly
+
+`build_profile()` calls this internally, but it's worth seeing what it computes on its own:
+
+```{r}
+stylo_features(lidar_reference$abstract[1:2])
+```
+
+## 3. Building a reference profile
+
+```{r}
+profile <- build_profile(lidar_reference$abstract)
+profile
+summary(profile)
+```
+
+`summary()` reports the covariance condition number -- how close the features are to collinear. A
+large value means the distances are dominated by estimation noise in the smallest eigenvalue of the
+covariance; `build_profile(x, shrink = 0.1)` shrinks the covariance toward a scaled identity matrix
+to bring it down, at the cost of treating the features as slightly more independent than they are.
+
+`plot()` draws the same `center`/`scale` table as one small panel per feature, since the features
+differ too much in scale to share one axis:
+
+```{r, fig.alt = "One panel per feature, each a point at the reference mean with whiskers at one reference standard deviation."}
+plot(profile)
+```
+
+## 4. Scoring new documents
+
+```{r}
+scores <- score(lidar_contrast$abstract, profile, method = "mahalanobis")
+scores
+summary(scores)
+```
+
+`plot()` on a `stylo_score` draws a histogram of the scores with the same 95% flagging cut-off the
+summary reports:
+
+```{r, fig.alt = "A histogram of Mahalanobis distances with a dashed vertical line at the 95th-percentile cut-off."}
+plot(scores)
+```
+
+The angular distance answers a different question -- not how extreme a document is, but whether the
+*proportions* between its features are wrong, even when nothing is extreme:
+
+```{r}
+scores_angular <- score(lidar_contrast$abstract, profile, method = "angular")
+summary(scores_angular)
+```
+
+## Interpreting the result
+
+`lidar_contrast` is split from `lidar_reference` by publication date, not by authorship, so a
+raised score here is a distributional shift across time, not a measure of detection accuracy. Two of
+the five features, `vocab_sophistication` and `mean_sentence_length`, also correlate with English
+proficiency and education, so a non-native English speaker writing ordinary prose can sit far from a
+profile built from native, highly educated writers. A flagged document is a statistical outlier
+relative to the reference corpus it was scored against, and nothing more -- the choice of reference
+corpus has to be documented wherever a verdict is reported.

@@ -16,3 +16,10 @@ src/*.dll
 docs/*_files/
 .DS_Store
 docs/
+
+# vignette knitting side effects, when rendered in place rather than via check()
+figure/
+vignettes/*_cache/
+vignettes/*_files/
+vignettes/*.knit.md
+vignettes/*.utf8.md

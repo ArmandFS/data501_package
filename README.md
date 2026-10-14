@@ -54,7 +54,7 @@ summary(scores)
 
 ## 4. run the unit tests
 testthat::test_local()
-#> [ FAIL 0 | WARN 0 | SKIP 0 | PASS 142 ]
+#> [ FAIL 0 | WARN 0 | SKIP 0 | PASS 174 ]
 ```
 
 To run the full package check from a clone:
@@ -73,16 +73,22 @@ devtools::check()   # 0 errors, 0 warnings, 0 notes
 
 `build_profile()` takes a corpus and returns an object of class
 `stylo_profile`. `score()` takes documents and a profile and returns an object
-of class `stylo_score`. Both are S3 classes with `print` and `summary` methods,
-and `summary` itself returns a classed object with its own `print` method — the
-same structure `stats::aov()` uses.
+of class `stylo_score`. Both are S3 classes with `print`, `summary` and `plot`
+methods, and `summary` itself returns a classed object with its own `print`
+method — the same structure `stats::aov()` uses.
 
 | Classes | Constructors | Methods |
 |---|---|---|
-| `stylo_profile` | `build_profile()` | `print`, `summary` |
+| `stylo_profile` | `build_profile()` | `print`, `summary`, `plot` |
 | `summary.stylo_profile` | `summary()` | `print` |
-| `stylo_score` | `score()` | `print`, `summary` |
+| `stylo_score` | `score()` | `print`, `summary`, `plot` |
 | `summary.stylo_score` | `summary()` | `print` |
+
+`plot()` on a `stylo_profile` draws its `center`/`scale` table as one panel
+per feature; `plot()` on a `stylo_score` draws a histogram of the scores with
+the same 95% flagging cut-off `summary()` reports. See
+`vignette("styloprofile")` for a worked walkthrough from the bundled corpora
+to a scored, plotted result.
 
 **The Rcpp function.** Given any raw text from a document, `build_profile()` calls
 `stylo_features()`, which calls the compiled `count_syllables_cpp()` to compute
@@ -130,15 +136,16 @@ The test functions and files are in `tests/testthat/`, and is run via `devtools:
 
 ```r
 devtools::test()
-#> [ FAIL 0 | WARN 0 | SKIP 0 | PASS 142 ]
+#> [ FAIL 0 | WARN 0 | SKIP 0 | PASS 174 ]
 ```
 
-**142 expectations across 77 `test_that` blocks in 5 files:**
+**174 expectations across 98 `test_that` blocks in 6 files:**
 
 | File | Blocks | Expectations | Covers |
 |---|---|---|---|
 | `test-angular.R` | 12 | 21 | `cosine_sim()`, `angular_dist()` |
-| `test-corpus.R` | 20 | 35 | corpus query, parsing, bundled data |
+| `test-corpus.R` | 27 | 47 | corpus query, parsing, bundled data |
+| `test-features.R` | 14 | 20 | `stylo_features()` |
 | `test-mahalanobis.R` | 13 | 22 | `mahalanobis_sq()` |
 | `test-profile.R` | 19 | 38 | `build_profile()`, `score()`, S3 methods |
 | `test-syllables.R` | 13 | 26 | `count_syllables_cpp()` / `_r()` |

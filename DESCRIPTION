@@ -20,9 +20,10 @@ Description: Extracts interpretable stylometric features from documents and
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: R (>= 4.0)
-Imports: Rcpp, stats, jsonlite, tools, utils
+Imports: Rcpp, stats, graphics, jsonlite, tools, utils
 LinkingTo: Rcpp
 Suggests: testthat (>= 3.0.0), knitr, rmarkdown, microbenchmark
+VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.0
 LazyData: true
