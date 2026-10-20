@@ -65,7 +65,7 @@ devtools::check()   # 0 errors, 0 warnings, 0 notes
 
 ---
 
-## Assignment 2 report
+## Design and testing details
 
 ### 1. This is an object oriented function with Rcpp as well. 
 
